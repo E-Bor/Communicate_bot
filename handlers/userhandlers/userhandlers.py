@@ -7,7 +7,7 @@ from markups.usermarkups import create_markup, markup_start, create_inline_marku
 from state.userState import UserLogingState, update_state
 from state.categories import categories_view
 from create import database
-from .Other_functions import check_name_right
+from .Other_functions import check_name_right, check_phone_right
 
 
 # command start
@@ -26,15 +26,21 @@ async def command_start(message: types.Message | types.CallbackQuery):
 
 async def name_validation(message: types.Message, state=FSMContext):
     name = await check_name_right(message)
-    update_fsm = await state.get_data()
-    print(update_fsm)
     if isinstance(name, str):
-        async with state.proxy() as data:
-            data["name"] = name
-        await UserLogingState.next()
+        await state.update_data({"name":name})
         await message.answer(text_in_start_phone_number)
+        await UserLogingState.next()
+
 
 async def phone_validation(message: types.Message, state=FSMContext):
+    phone = await check_phone_right(message)
+    print("hi")
+    if isinstance(phone, str):
+        await state.update_data({"phone": phone})
+        data = await state.get_data()
+        database.add_position(message.from_user.id, data["phone"], data["name"], "FALSE")
+        await state.finish()
+        await command_start(message)
 
 
 # Get contact information about bot
@@ -64,10 +70,12 @@ async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
         await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
 
 
+
+
 def register_user_handlers(dp:  Dispatcher):
     dp.register_message_handler(command_start, commands=["start"])
     dp.register_message_handler(name_validation, state=UserLogingState.name)
-    dp.register_message_handler(name_validation, state=UserLogingState.phone)
+    dp.register_message_handler(phone_validation, state=UserLogingState.phone)
     dp.register_message_handler(contacts, lambda message: "Полезные контакты" in message.text)
     dp.register_message_handler(create_inline_menu, filters.Text(["⛔ Оставить заявку", "📞 Связаться", "⚙️ Настройки",
                                                                   "☎ Полезные контакты"]))

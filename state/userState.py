@@ -15,5 +15,6 @@ def check_name_right(name):
 
 class UserLogingState(StatesGroup):
     """state for change user category"""
-    name_state = State()
+    name = State()
+    phone = State()
 

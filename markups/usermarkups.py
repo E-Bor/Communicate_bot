@@ -29,7 +29,7 @@ markup_start = ReplyKeyboardMarkup(resize_keyboard=True).\
 #     return main_markup
 
 def create_inline_markup(titles: list, path: str):
-    print(titles, path, type(path))
+
     buttons = [InlineKeyboardButton(text=f"{i}", callback_data=navigator_callback.new(
         Current_path=f"{str(path)}{titles.index(i)}"
     )) for i in titles if i != "🔙 Оставить номер телефона"]
@@ -43,6 +43,6 @@ def create_inline_markup(titles: list, path: str):
     if str(path) not in ["10", "11"]:
         main_markup.add(InlineKeyboardButton(text="🔙Назад",
                                              callback_data=navigator_callback.new(Current_path=f"{str(path)[:-1]}")))
-        print(str(path), "path")
+
         return main_markup
     return main_markup

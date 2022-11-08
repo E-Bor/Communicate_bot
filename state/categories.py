@@ -11,7 +11,6 @@
 def categories_view(category, path, first_dir=None):
     dic = category.copy()
     path = list(map(int, path))
-    print(path)
     if not path:
         first_index = list(dic.keys()).index(first_dir)
         first_cat = list(category[first_dir].keys())

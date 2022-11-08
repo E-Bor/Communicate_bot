@@ -4,9 +4,10 @@ from aiogram.dispatcher import filters
 from create import dp, bot
 from config.config import *
 from markups.usermarkups import create_markup, markup_start, create_inline_markup, navigator_callback
-from state.userState import UserState, update_state
+from state.userState import UserLogingState, update_state
 from state.categories import categories_view
 from create import database
+from Other_functions import check_name_right
 
 
 # command start
@@ -19,12 +20,17 @@ async def command_start(message: types.Message | types.CallbackQuery):
             await message.answer(text_in_start_old_user, reply_markup=markup_start)
         if database.check_user(message.chat.id) == 0:
             await message.answer(text_in_start_new_user)
-
+            await UserLogingState.name_state.set()
     if isinstance(message, types.CallbackQuery):
         await message.message.answer(text_in_start_old_user, reply_markup=markup_start)
 
 async def name_validation(message: types.Message, state=FSMContext):
-    ...
+    name = check_name_right(message)
+    if name is not None:
+        print("guud name")
+
+
+
 
 # Get contact information about bot
 async def contacts(message: types.Message, state: FSMContext):
@@ -55,6 +61,7 @@ async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
 
 def register_user_handlers(dp:  Dispatcher):
     dp.register_message_handler(command_start, commands=["start"])
+    dp.register_message_handler(name_validation, state=UserLogingState.name_state)
     dp.register_message_handler(contacts, lambda message: "Полезные контакты" in message.text)
     dp.register_message_handler(create_inline_menu, filters.Text(["⛔ Оставить заявку", "📞 Связаться", "⚙️ Настройки",
                                                                   "☎ Полезные контакты"]))

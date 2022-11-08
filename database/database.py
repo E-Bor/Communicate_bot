@@ -45,7 +45,7 @@ class UserData:
     # read data from database
     def read_data(self, category):
         cur, con = self.create_connection()
-        sql_request = "select * from Userdata where category=:category"
+        sql_request = "select * from Userdata where userid=:category"
         data = cur.execute(sql_request, {"category": category}).fetchall()
         self.stop_connection(con)
         return data
@@ -53,7 +53,7 @@ class UserData:
     # add position to database
     def add_position(self, *args):
         cur, con = self.create_connection()
-        sql_request = "insert into Userdata values (?,?,?,?)"
+        sql_request = "insert or ignore into Userdata values (?,?,?,?)"
         cur.execute(sql_request, args)
         con.commit()
         self.stop_connection(con)
@@ -86,6 +86,13 @@ class UserData:
         self.stop_connection(con)
         return data
 
+    def check_user(self, user_id):
+        a = self.read_data(user_id)
+        print(a)
+        if not a:
+            return 0
+        if a[0][-1] == "TRUE":
+            return "Ban"
+        else:
+            return 1
 
-test = UserData()
-print(test.path_to_database)

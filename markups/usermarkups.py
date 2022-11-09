@@ -13,7 +13,7 @@ def create_markup(titles: list):
         mk.row(KeyboardButton(text="🔙Назад"))
     return mk
 
-markup_start = ReplyKeyboardMarkup(resize_keyboard=True).\
+markup_start = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).\
     add(KeyboardButton("⛔ Оставить заявку"), KeyboardButton("📞 Связаться")).\
     row(KeyboardButton("⚙️ Настройки")).row(KeyboardButton("☎ Полезные контакты"))
 
@@ -29,7 +29,6 @@ markup_start = ReplyKeyboardMarkup(resize_keyboard=True).\
 #     return main_markup
 
 def create_inline_markup(titles: list, path: str):
-
     buttons = [InlineKeyboardButton(text=f"{i}", callback_data=navigator_callback.new(
         Current_path=f"{str(path)}{titles.index(i)}"
     )) for i in titles if i != "🔙 Оставить номер телефона"]

@@ -14,7 +14,13 @@ def check_name_right(name):
 
 
 class UserLogingState(StatesGroup):
-    """state for change user category"""
+    """state for user registration"""
     name = State()
     phone = State()
+
+class UserReportState(StatesGroup):
+    """state for creating report"""
+    address = State()
+    photo = State()
+    reason = State()
 

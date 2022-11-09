@@ -25,6 +25,7 @@ async def command_start(message: types.Message | types.CallbackQuery):
         await message.message.answer(text_in_start_old_user, reply_markup=markup_start)
 
 
+# function for check name in rules
 async def name_validation(message: types.Message, state=FSMContext):
     name = await check_name_right(message)
     if isinstance(name, str):
@@ -54,25 +55,26 @@ async def create_inline_menu(message: types.Message):
     first_dir = message.text
     path = []
     first_index, first_cats = categories_view(categories, path, first_dir=first_dir)
-    markup = create_inline_markup(first_cats, first_index)
+    markup = create_inline_markup(first_cats, str(first_index))
     await message.answer(categories_messages[str(first_index)], reply_markup=markup)
 
 
-
+# changing directory. callback_data current its a users way
 async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
     functions = {
         "00": create_report_start
     }
     await callback.message.delete()
+    print(callback_data["Current_path"])
     if not callback_data["Current_path"]:
         await command_start(callback)
-    if callback_data["Current_path"] in ["00","01", "10", "11"]:
+    elif callback_data["Current_path"] in ["00"]:
         await functions[str(callback_data["Current_path"])](callback, callback_data)
-
     else:
         cats = categories_view(categories, callback_data["Current_path"])
         markup = create_inline_markup(cats, callback_data["Current_path"])
         await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
 
 async def create_report_start(callback: types.CallbackQuery, callback_data: dict):
     await UserReportState.address.set()
@@ -81,9 +83,23 @@ async def create_report_start(callback: types.CallbackQuery, callback_data: dict
     print(markup, type(markup))
     await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
 
-
+# catching callbacks in state UserReportState in send report menu
 async def report_callbacks(callback: types.CallbackQuery, callback_data: dict, state: FSMContext):
     print(callback_data)
+    if callback_data["Current_path"] == "0":
+        await state.finish()
+        await walk_in_dirs(callback, callback_data)
+    else:
+        states = {
+            "00": UserReportState.address,
+            "000": UserReportState.photo,
+            "0000": UserReportState.reason
+            }
+        await state.set_state(states[callback_data["Current_path"]])
+        cats = categories_view(categories, callback_data["Current_path"])
+        markup = create_inline_markup(cats, callback_data["Current_path"])
+        await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
 
 async def report_address(message: types.Message, state: FSMContext):
     await state.update_data({"address": message.text})
@@ -92,8 +108,10 @@ async def report_address(message: types.Message, state: FSMContext):
     await message.answer(categories_messages["000"], reply_markup=markup)
     await UserReportState.next()
 
+
 async def report_photo_check_type(message: types.Message, state: FSMContext):
     await message.answer(bad_message_in_report)
+
 
 async def report_photo(message: types.Message, state: FSMContext):
     await state.update_data({"photo": message.photo[-1].file_id})
@@ -102,11 +120,13 @@ async def report_photo(message: types.Message, state: FSMContext):
     await message.answer(categories_messages["0000"], reply_markup=markup)
     await UserReportState.next()
 
+
 async def report_reason(message: types.Message, state: FSMContext):
     await state.update_data({"message": message.text})
     all_data = await state.get_data()
+    print(all_data)
     await state.finish()
-    await message.answer("vse")
+    await message.answer(report_success_message)
 
 
 

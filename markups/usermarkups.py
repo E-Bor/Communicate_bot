@@ -33,7 +33,7 @@ def create_inline_markup(titles: list, path: str):
         Current_path=f"{str(path)}{titles.index(i)}"
     )) for i in titles if i != "🔙 Оставить номер телефона"]
 
-    main_markup = InlineKeyboardMarkup(row_width=1 if path == 1 else 2)
+    main_markup = InlineKeyboardMarkup(row_width=1 if path == "1" else 2)
     main_markup.add(*buttons)
     if str(path) == "10":
         main_markup.add(InlineKeyboardButton(text="🔙 Оставить номер телефона",

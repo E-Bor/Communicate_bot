@@ -4,7 +4,7 @@ from aiogram.dispatcher import filters
 from create import dp, bot
 from config.config import *
 from markups.usermarkups import create_markup, markup_start, create_inline_markup, navigator_callback
-from state.userState import UserLogingState, update_state, UserReportState
+from state.userState import UserLogingState, update_state, UserReportState, UserOfferState
 from state.categories import categories_view
 from create import database
 from .Other_functions import check_name_right, check_phone_right
@@ -62,13 +62,14 @@ async def create_inline_menu(message: types.Message):
 # changing directory. callback_data current its a users way
 async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
     functions = {
-        "00": create_report_start
+        "00": create_report_start,
+        "01": new_offer_from_user
     }
     await callback.message.delete()
     print(callback_data["Current_path"])
     if not callback_data["Current_path"]:
         await command_start(callback)
-    elif callback_data["Current_path"] in ["00"]:
+    elif callback_data["Current_path"] in ["00", "01"]:
         await functions[str(callback_data["Current_path"])](callback, callback_data)
     else:
         cats = categories_view(categories, callback_data["Current_path"])
@@ -123,24 +124,41 @@ async def report_photo(message: types.Message, state: FSMContext):
 
 async def report_reason(message: types.Message, state: FSMContext):
     await state.update_data({"message": message.text})
-    all_data = await state.get_data()
+    all_data = await state.get_data()   # from this data generating messages from admins
     print(all_data)
     await state.finish()
     await message.answer(report_success_message)
 
 
+async def new_offer_from_user(callback: types.CallbackQuery, callback_data: dict):
+    await UserOfferState.offer.set()
+    cats = categories_view(categories, callback_data["Current_path"])
+    markup = create_inline_markup(cats, callback_data["Current_path"])
+    await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
+
+async def new_offer_from_user_register(message: types.Message, state: FSMContext):
+    print("hi")
+    await state.update_data({"offer": message.text})
+    all_data = await state.get_data()  # from this data generating messages from admins
+    print(all_data)
+    await state.finish()
+    await message.answer(offer_success_message)
+
 
 def register_user_handlers(dp:  Dispatcher):
     dp.register_message_handler(command_start, commands=["start"])
-
     dp.register_message_handler(name_validation, state=UserLogingState.name)
     dp.register_message_handler(phone_validation, state=UserLogingState.phone)
     dp.register_message_handler(contacts, lambda message: "Полезные контакты" in message.text)
     dp.register_message_handler(create_inline_menu, filters.Text(["⛔ Оставить заявку", "📞 Связаться", "⚙️ Настройки",
                                                                   "☎ Полезные контакты"]))
-    dp.register_callback_query_handler(report_callbacks, navigator_callback.filter(), state=[UserReportState.address,UserReportState.reason,UserReportState.photo])
+    dp.register_callback_query_handler(report_callbacks, navigator_callback.filter(), state=[UserReportState.address,UserReportState.reason,UserReportState.photo,UserOfferState.offer])
     dp.register_message_handler(report_address, state=UserReportState.address)
     dp.register_message_handler(report_photo_check_type, state=UserReportState.photo)
     dp.register_message_handler(report_photo, state=UserReportState.photo, content_types=["photo"])
     dp.register_message_handler(report_reason, state=UserReportState.reason)
+
+    dp.register_message_handler(new_offer_from_user_register, state=UserOfferState.offer)
+
     dp.register_callback_query_handler(walk_in_dirs, navigator_callback.filter())

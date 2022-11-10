@@ -7,6 +7,7 @@ async def update_state(state, name_of_state, update):
     a.append(update)
     await state.update_data(current_state=a)
 
+
 def check_name_right(name):
     names = name.split()
     if len(names) != 2:
@@ -23,4 +24,7 @@ class UserReportState(StatesGroup):
     address = State()
     photo = State()
     reason = State()
+
+class UserOfferState(StatesGroup):
+    offer = State()
 

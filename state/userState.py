@@ -31,3 +31,7 @@ class UserOfferState(StatesGroup):
 class UserUpdateSettingsState(StatesGroup):
     New_Name = State()
     New_Phone = State()
+
+
+class UserDialogWithAdmins(StatesGroup):
+    messages = State()

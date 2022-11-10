@@ -4,7 +4,7 @@ from aiogram.dispatcher import filters
 from create import dp, bot
 from config.config import *
 from markups.usermarkups import create_markup, markup_start, create_inline_markup, navigator_callback
-from state.userState import UserLogingState, update_state, UserReportState, UserOfferState, UserUpdateSettingsState
+from state.userState import UserLogingState, update_state, UserReportState, UserOfferState, UserUpdateSettingsState,UserDialogWithAdmins
 from state.categories import categories_view
 from create import database
 from .Other_functions import check_name_right, check_phone_right
@@ -66,13 +66,14 @@ async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
         "01": new_offer_from_user,
         "100": request_for_telephone_call,
         "20": update_name,
-        "21": update_phone_number
+        "21": update_phone_number,
+        "11": dialog_with_admins
     }
     await callback.message.delete()
     print(callback_data["Current_path"])
     if not callback_data["Current_path"]:
         await command_start(callback)
-    elif callback_data["Current_path"] in ["00", "01", "100", "20", "21"]:
+    elif callback_data["Current_path"] in ["00", "01", "100", "20", "21","11"]:
         await functions[str(callback_data["Current_path"])](callback, callback_data)
     else:
         cats = categories_view(categories, callback_data["Current_path"])
@@ -193,6 +194,22 @@ async def update_name_catch(message: types.Message, state: FSMContext):
         database.edit_position(message.from_user.id, "username", new_name["New_name"])
 
 
+async def dialog_with_admins(callback: types.CallbackQuery, callback_data: dict):
+    await UserDialogWithAdmins.messages.set()
+    cats = categories_view(categories, callback_data["Current_path"])
+    markup = create_inline_markup(cats, callback_data["Current_path"])
+    await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
+async def messages_replier(message: types.Message, state: FSMContext):
+    print(message.text)
+
+
+async def stop_dialog_with_admins(callback: types.CallbackQuery, callback_data: dict,state =FSMContext):
+    await state.finish()
+    await callback.message.answer(stop_dialog_with_admins_message)
+
+
+
 def register_user_handlers(dp:  Dispatcher):
     dp.register_message_handler(command_start, commands=["start"])
     dp.register_message_handler(name_validation, state=UserLogingState.name)
@@ -214,5 +231,6 @@ def register_user_handlers(dp:  Dispatcher):
                                                                                                          "video"])
     dp.register_message_handler(update_phone_number_catch, state=UserUpdateSettingsState.New_Phone)
     dp.register_message_handler(update_name_catch, state=UserUpdateSettingsState.New_Name)
-
+    dp.register_message_handler(messages_replier, state=UserDialogWithAdmins.messages)
+    dp.register_callback_query_handler(stop_dialog_with_admins, navigator_callback.filter(), state=UserDialogWithAdmins.messages)
     dp.register_callback_query_handler(walk_in_dirs, navigator_callback.filter())

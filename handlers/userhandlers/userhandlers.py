@@ -77,7 +77,10 @@ async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
     else:
         cats = categories_view(categories, callback_data["Current_path"])
         markup = create_inline_markup(cats, callback_data["Current_path"])
-        await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+        answer = categories_messages[callback_data["Current_path"]].replace("\|phone\| ",\
+        f"__\+{str(database.read_data(callback.from_user.id)[0][1])}__") if callback_data["Current_path"]== "10" else \
+            categories_messages[callback_data["Current_path"]]
+        await callback.message.answer(answer, reply_markup=markup)
 
 
 async def create_report_start(callback: types.CallbackQuery, callback_data: dict):

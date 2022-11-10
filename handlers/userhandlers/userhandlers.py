@@ -4,7 +4,7 @@ from aiogram.dispatcher import filters
 from create import dp, bot
 from config.config import *
 from markups.usermarkups import create_markup, markup_start, create_inline_markup, navigator_callback
-from state.userState import UserLogingState, update_state, UserReportState, UserOfferState
+from state.userState import UserLogingState, update_state, UserReportState, UserOfferState, UserUpdateSettingsState
 from state.categories import categories_view
 from create import database
 from .Other_functions import check_name_right, check_phone_right
@@ -63,13 +63,16 @@ async def create_inline_menu(message: types.Message):
 async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
     functions = {
         "00": create_report_start,
-        "01": new_offer_from_user
+        "01": new_offer_from_user,
+        "100": request_for_telephone_call,
+        "20": update_name,
+        "21": update_phone_number
     }
     await callback.message.delete()
     print(callback_data["Current_path"])
     if not callback_data["Current_path"]:
         await command_start(callback)
-    elif callback_data["Current_path"] in ["00", "01"]:
+    elif callback_data["Current_path"] in ["00", "01", "100", "20", "21"]:
         await functions[str(callback_data["Current_path"])](callback, callback_data)
     else:
         cats = categories_view(categories, callback_data["Current_path"])
@@ -124,8 +127,7 @@ async def report_photo(message: types.Message, state: FSMContext):
 
 async def report_reason(message: types.Message, state: FSMContext):
     await state.update_data({"message": message.text})
-    all_data = await state.get_data()   # from this data generating messages from admins
-    print(all_data)
+    report_data = await state.get_data()   # from this data generating messages from admins
     await state.finish()
     await message.answer(report_success_message)
 
@@ -138,12 +140,54 @@ async def new_offer_from_user(callback: types.CallbackQuery, callback_data: dict
 
 
 async def new_offer_from_user_register(message: types.Message, state: FSMContext):
-    print("hi")
     await state.update_data({"offer": message.text})
-    all_data = await state.get_data()  # from this data generating messages from admins
-    print(all_data)
+    offer_data = await state.get_data()  # from this data generating messages from admins about new offer
     await state.finish()
     await message.answer(offer_success_message)
+
+
+async def new_offer_from_user_register_bad(message: types.Message, state: FSMContext):
+    await message.answer(bad_offer_message)
+
+
+async def request_for_telephone_call(callback: types.CallbackQuery, callback_data: dict):
+    await callback.message.answer(answer_in_telephone_call)
+    #create some for send telephone number to admin group
+
+
+async def update_phone_number(callback: types.CallbackQuery, callback_data: dict):
+    await UserUpdateSettingsState.New_Phone.set()
+    cats = categories_view(categories, callback_data["Current_path"])
+    markup = create_inline_markup(cats, callback_data["Current_path"])
+    await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
+
+async def update_phone_number_catch(message: types.Message, state: FSMContext):
+    phone = await check_phone_right(message)
+    if isinstance(phone, str):
+        await state.update_data({"New_phone": message.text})
+        new_phone = await state.get_data()
+        await state.finish()
+        await message.answer(phone_update_settings_success)
+        database.edit_position(message.from_user.id, "userphone", new_phone["New_phone"])
+
+
+
+async def update_name(callback: types.CallbackQuery, callback_data: dict):
+    await UserUpdateSettingsState.New_Name.set()
+    cats = categories_view(categories, callback_data["Current_path"])
+    markup = create_inline_markup(cats, callback_data["Current_path"])
+    await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
+
+async def update_name_catch(message: types.Message, state: FSMContext):
+    name = await check_name_right(message)
+    if isinstance(name, str):
+        await state.update_data({"New_name": message.text})
+        new_name = await state.get_data()
+        await state.finish()
+        await message.answer(phone_update_settings_success)
+        database.edit_position(message.from_user.id, "username", new_name["New_name"])
 
 
 def register_user_handlers(dp:  Dispatcher):
@@ -153,12 +197,19 @@ def register_user_handlers(dp:  Dispatcher):
     dp.register_message_handler(contacts, lambda message: "Полезные контакты" in message.text)
     dp.register_message_handler(create_inline_menu, filters.Text(["⛔ Оставить заявку", "📞 Связаться", "⚙️ Настройки",
                                                                   "☎ Полезные контакты"]))
-    dp.register_callback_query_handler(report_callbacks, navigator_callback.filter(), state=[UserReportState.address,UserReportState.reason,UserReportState.photo,UserOfferState.offer])
+    dp.register_callback_query_handler(report_callbacks, navigator_callback.filter(), state=[UserReportState.address,
+                                                                                             UserReportState.reason,
+                                                                                             UserReportState.photo,
+                                                                                             UserOfferState.offer])
     dp.register_message_handler(report_address, state=UserReportState.address)
     dp.register_message_handler(report_photo_check_type, state=UserReportState.photo)
     dp.register_message_handler(report_photo, state=UserReportState.photo, content_types=["photo"])
     dp.register_message_handler(report_reason, state=UserReportState.reason)
 
     dp.register_message_handler(new_offer_from_user_register, state=UserOfferState.offer)
+    dp.register_message_handler(new_offer_from_user_register_bad, state=UserOfferState.offer, content_types=["photo",
+                                                                                                         "video"])
+    dp.register_message_handler(update_phone_number_catch, state=UserUpdateSettingsState.New_Phone)
+    dp.register_message_handler(update_name_catch, state=UserUpdateSettingsState.New_Name)
 
     dp.register_callback_query_handler(walk_in_dirs, navigator_callback.filter())

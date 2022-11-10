@@ -65,7 +65,7 @@ class UserData:
             print(f"Not correct category '{category}' ")
         else:
             try:
-                sql_request = f"update Userdata set {item} = ? where category= ?"
+                sql_request = f"update Userdata set {item} = ? where userid= ?"
                 cur.execute(sql_request, (value, category,))
                 con.commit()
             except sqlite3.OperationalError:

@@ -28,3 +28,6 @@ class UserReportState(StatesGroup):
 class UserOfferState(StatesGroup):
     offer = State()
 
+class UserUpdateSettingsState(StatesGroup):
+    New_Name = State()
+    New_Phone = State()

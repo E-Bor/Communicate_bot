@@ -1,2 +1,1 @@
-from .userhandlers import register_user_handlers
 from .adminhandlers import register_admin_handlers

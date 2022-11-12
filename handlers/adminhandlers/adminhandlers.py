@@ -18,6 +18,7 @@ def read_write_chat_info(path: str, new_id: str):
             f.write(f"{i}\n")
     return list_id
 
+
 def update_chats_id():
     path = ["\\config\\admin_chatlist","\\config\\offer_chatlist","\\config\\report_chatlist"]
     all_id = list()

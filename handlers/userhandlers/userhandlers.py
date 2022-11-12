@@ -39,7 +39,7 @@ async def phone_validation(message: types.Message, state=FSMContext):
     if isinstance(phone, str):
         await state.update_data({"phone": phone})
         data = await state.get_data()
-        database.add_position(message.from_user.id, data["phone"], data["name"], "FALSE")
+        database.add_position(message.from_user.id, message.from_user.username, data["phone"], data["name"], "FALSE")
         await state.finish()
         await command_start(message)
 
@@ -51,6 +51,9 @@ async def contacts(message: types.Message, state: FSMContext):
 
 
 async def create_inline_menu(message: types.Message):
+    if database.check_user(message.chat.id) == "Ban":
+        await message.answer("Вы забанены Администратором")
+        return 0
     await message.delete()
     first_dir = message.text
     path = []

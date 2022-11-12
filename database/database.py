@@ -15,6 +15,7 @@ class UserData:
             cursor = sqlite_connection.cursor()
             sqlite_create = """CREATE TABLE Userdata (
                                 userid    INTEGER UNIQUE,
+                                tgnick    TEXT,
                                 userphone INTEGER,
                                 username  TEXT,
                                 userban   BOOLEAN DEFAULT (FALSE) 
@@ -50,10 +51,17 @@ class UserData:
         self.stop_connection(con)
         return data
 
+    def get_all_id(self):
+        cur, con = self.create_connection()
+        sql_request = "select userid from Userdata "
+        data = cur.execute(sql_request).fetchall()
+        self.stop_connection(con)
+        return data
+
     # add position to database
     def add_position(self, *args):
         cur, con = self.create_connection()
-        sql_request = "insert or ignore into Userdata values (?,?,?,?)"
+        sql_request = "insert or ignore into Userdata values (?,?,?,?,?)"
         cur.execute(sql_request, args)
         con.commit()
         self.stop_connection(con)
@@ -95,4 +103,16 @@ class UserData:
             return "Ban"
         else:
             return 1
+
+    def get_info_about_user(self, userid):
+        if "@" not in userid:
+            info = self.read_data(userid)
+            return info[0]
+        else:
+            userid = userid.replace("@", "")
+            cur, con = self.create_connection()
+            sql_request = "select * from Userdata where tgnick=:category"
+            data = cur.execute(sql_request, {"category": userid}).fetchall()
+            self.stop_connection(con)
+            return data[0]
 

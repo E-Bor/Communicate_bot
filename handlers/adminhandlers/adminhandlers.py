@@ -67,6 +67,7 @@ async def send_message_to_all_users(message: types.Message):
             print("chat_not found")
 
 
+
 async def check_user_in_db(message: types.Message):
     print(message)
     request = message.text.replace("/get_info ", "")

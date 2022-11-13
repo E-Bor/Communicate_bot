@@ -8,6 +8,7 @@ from state.userState import UserLogingState, update_state, UserReportState, User
 from state.categories import categories_view
 from create import database
 from .Other_functions import check_name_right, check_phone_right
+from handlers.adminhandlers.adminhandlers import update_chats_id
 
 
 # command start
@@ -204,10 +205,19 @@ async def dialog_with_admins(callback: types.CallbackQuery, callback_data: dict)
     await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
 
 async def messages_replier(message: types.Message, state: FSMContext):
-    print(message.text)
+    update_chats_id()
+    mess = f"Пользователь с id {message.from_user.id} отправил сообщение: {message.text}"
+    print(message.message_id)
+    from handlers.adminhandlers.adminhandlers import loaded_id
+    for i in loaded_id[3]:
+        for j in mess:
+            if j in ["*", "_", "$", "!", ".", ","]:
+                mess = mess.replace(j, f"\\{j}")
+        await bot.send_message(i, mess)
 
 
 async def stop_dialog_with_admins(callback: types.CallbackQuery, callback_data: dict,state =FSMContext):
+    await callback.answer()
     await state.finish()
     await callback.message.answer(stop_dialog_with_admins_message)
 

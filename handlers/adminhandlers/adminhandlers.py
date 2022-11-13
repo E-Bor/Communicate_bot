@@ -3,6 +3,7 @@ from create import dp, bot
 from config.config import ADMINS_ID, PATH
 from database.database import UserData
 from aiogram.utils.exceptions import ChatNotFound
+
 loaded_id = []
 
 
@@ -20,7 +21,7 @@ def read_write_chat_info(path: str, new_id: str):
 
 
 def update_chats_id():
-    path = ["\\config\\admin_chatlist","\\config\\offer_chatlist","\\config\\report_chatlist"]
+    path = ["\\config\\admin_chatlist","\\config\\offer_chatlist","\\config\\report_chatlist", "\\config\\call_chatlist"]
     all_id = list()
     for i in path:
         current_list = list()
@@ -56,6 +57,15 @@ async def start_report_group(message: types.Message):
     update_chats_id()
 
 
+
+async def start_call_group(message: types.Message):
+    new_report_chat = str(message.chat.id)
+    path_to_admin_groups = PATH + "\\config\\call_chatlist"
+    read_write_chat_info(path_to_admin_groups, new_report_chat)
+    await message.answer("Этот чат успешно добавлен в список чатов для звонков")
+    update_chats_id()
+    print(loaded_id)
+
 async def send_message_to_all_users(message: types.Message):
     print(message)
     message_to_all = message.text.replace("/send_to_all", "")
@@ -74,14 +84,11 @@ async def check_user_in_db(message: types.Message):
     request = message.text.replace("/get_info ", "")
     userdata = UserData()
     info = userdata.get_info_about_user(request)
-    nickname = ""
-    for i in info[1]:
-        if i in ["*","_", "$", "!", ".", ","]:
-            i = "\\"+i
-            nickname += i
-        else:
-            nickname += i
-    print(nickname)
+    nickname = info[1]
+    for i in nickname:
+        if i in ["*", "_", "$", "!", ".", ","]:
+            nickname = nickname.replace(i, f"\\{i}")
+
     answer = f"id пользователя\: {info[0]}\n Ник пользователя в телеграмме: {nickname}\n Номер телефона пользователя: {info[2]}\n Имя и фамилия пользователя: {info[3]}\n Статус бана пользователя: {str(info[4])}"
     await message.answer(answer, parse_mode=None)
 
@@ -99,12 +106,21 @@ async def ban_unban_users(message: types.Message):
         await message.answer(f"Пользователь c id {mess[-1]} разбанен")
 
 
+async def admin_answer(message: types.Message):
+    await message.answer("text")
+    client_message = message.reply_to_message.text
+    admin_ans = f"Ответ Администратора: {message.text}"
+    user_id = client_message.split()[3]
+    await bot.send_message(user_id, admin_ans)
+
 def register_admin_handlers(dp:  Dispatcher):
     update_chats_id()
     dp.register_message_handler(start_admin_group, user_id=ADMINS_ID, commands=["activate_admin_group"])
     dp.register_message_handler(start_offer_group, user_id=ADMINS_ID, commands=["activate_offer_group"])
     dp.register_message_handler(start_report_group, user_id=ADMINS_ID, commands=["activate_report_group"])
+    dp.register_message_handler(start_call_group, user_id=ADMINS_ID, commands=["activate_call_group"])
     dp.register_message_handler(send_message_to_all_users, chat_id=loaded_id[0], commands=["send_to_all"])
     dp.register_message_handler(check_user_in_db, chat_id=loaded_id[0], commands=["get_info"])
     dp.register_message_handler(ban_unban_users, chat_id=loaded_id[0], commands=["ban"])
     dp.register_message_handler(ban_unban_users, chat_id=loaded_id[0], commands=["unban"])
+    dp.register_message_handler(admin_answer, chat_id=loaded_id[0])

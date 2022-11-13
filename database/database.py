@@ -104,7 +104,7 @@ class UserData:
         else:
             return 1
 
-    def get_info_about_user(self, userid):
+    def get_info_about_user(self, userid:str):
         if "@" not in userid:
             info = self.read_data(userid)
             return info[0]

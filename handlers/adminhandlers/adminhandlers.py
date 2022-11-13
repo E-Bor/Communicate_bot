@@ -3,7 +3,7 @@ from create import dp, bot
 from config.config import ADMINS_ID, PATH
 from database.database import UserData
 from aiogram.utils.exceptions import ChatNotFound
-
+from create import database
 loaded_id = []
 
 
@@ -69,8 +69,7 @@ async def start_call_group(message: types.Message):
 async def send_message_to_all_users(message: types.Message):
     print(message)
     message_to_all = message.text.replace("/send_to_all", "")
-    userdata = UserData()
-    all_id = [i[0] for i in userdata.get_all_id()]
+    all_id = [i[0] for i in database.get_all_id()]
     for i in all_id:
         try:
             await bot.send_message(i, message_to_all)
@@ -82,8 +81,7 @@ async def send_message_to_all_users(message: types.Message):
 async def check_user_in_db(message: types.Message):
     print(message)
     request = message.text.replace("/get_info ", "")
-    userdata = UserData()
-    info = userdata.get_info_about_user(request)
+    info = database.get_info_about_user(request)
     nickname = info[1]
     for i in nickname:
         if i in ["*", "_", "$", "!", ".", ","]:
@@ -97,12 +95,10 @@ async def ban_unban_users(message: types.Message):
     mess = message.text.split()
     print(mess)
     if "/ban" in mess:
-        userdata = UserData()
-        userdata.edit_position(mess[-1], "userban", "TRUE")
+        database.edit_position(mess[-1], "userban", "TRUE")
         await message.answer(f"Пользователь c id {mess[-1]} забанен")
     if "/unban" in mess:
-        userdata = UserData()
-        userdata.edit_position(mess[-1], "userban", "FALSE")
+        database.edit_position(mess[-1], "userban", "FALSE")
         await message.answer(f"Пользователь c id {mess[-1]} разбанен")
 
 

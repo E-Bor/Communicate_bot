@@ -83,7 +83,7 @@ async def walk_in_dirs(callback: types.CallbackQuery, callback_data: dict):
         cats = categories_view(categories, callback_data["Current_path"])
         markup = create_inline_markup(cats, callback_data["Current_path"])
         answer = categories_messages[callback_data["Current_path"]].replace("\|phone\| ",\
-        f"__\+{str(database.read_data(callback.from_user.id)[0][1])}__") if callback_data["Current_path"]== "10" else \
+        f"__\+{str(database.read_data(callback.from_user.id)[0][2])}__") if callback_data["Current_path"]== "10" else \
             categories_messages[callback_data["Current_path"]]
         await callback.message.answer(answer, reply_markup=markup)
 
@@ -97,8 +97,9 @@ async def create_report_start(callback: types.CallbackQuery, callback_data: dict
 
 # catching callbacks in state UserReportState in send report menu
 async def report_callbacks(callback: types.CallbackQuery, callback_data: dict, state: FSMContext):
-    print(callback_data)
-    if callback_data["Current_path"] == "0":
+
+    if callback_data["Current_path"] in ["0", "2"]:
+        print(callback_data)
         await state.finish()
         await walk_in_dirs(callback, callback_data)
     else:
@@ -138,6 +139,23 @@ async def report_reason(message: types.Message, state: FSMContext):
     report_data = await state.get_data()   # from this data generating messages from admins
     await state.finish()
     await message.answer(report_success_message)
+    username = str(message.from_user.username)
+    id_user = message.from_user.id
+    for i in username:
+        if i in ["*", "_", "$", "!", ".", ","]:
+            username = username.replace(i, f"\\{i}")
+    user_info = database.get_info_about_user(str(id_user))
+    phone = user_info[2]
+    name = user_info[3]
+    caption = f"⛔*Поступила новая жалоба\:* \n @{id_user if username == None else username} \n _*Имя и фамилия\:*_ {name}\n _*Номер телефона\:*_ \+{phone}\n _*Адрес: *_{report_data['address'] if 'address' in report_data.keys() else ''}\n _*Содержание: *_ {report_data['message'] if 'message' in report_data.keys() else ''}"
+    update_chats_id()
+    from handlers.adminhandlers.adminhandlers import loaded_id
+    if "photo" in report_data:
+        for i in loaded_id[2]:
+            await bot.send_photo(i, report_data["photo"], caption=caption)
+    else:
+        for i in loaded_id[2]:
+            await bot.send_message(i, caption)
 
 
 async def new_offer_from_user(callback: types.CallbackQuery, callback_data: dict):
@@ -152,15 +170,32 @@ async def new_offer_from_user_register(message: types.Message, state: FSMContext
     offer_data = await state.get_data()  # from this data generating messages from admins about new offer
     await state.finish()
     await message.answer(offer_success_message)
-
+    username = str(message.from_user.username)
+    id_user = message.from_user.id
+    for i in username:
+        if i in ["*", "_", "$", "!", ".", ","]:
+            username = username.replace(i, f"\\{i}")
+    user_info = database.get_info_about_user(str(id_user))
+    phone = user_info[2]
+    name = user_info[3]
+    caption = f"⛔*Поступила новая жалоба\:* \n @{id_user if username == None else username} \n _*Имя и фамилия\:*_ {name}\n _*Номер телефона\:*_ \+{phone}\n _*Содержание: *_ {offer_data['offer'] if 'offer' in offer_data.keys() else ''}"
+    update_chats_id()
+    from handlers.adminhandlers.adminhandlers import loaded_id
+    for i in loaded_id[1]:
+        await bot.send_message(i, caption)
 
 async def new_offer_from_user_register_bad(message: types.Message, state: FSMContext):
     await message.answer(bad_offer_message)
 
 
 async def request_for_telephone_call(callback: types.CallbackQuery, callback_data: dict):
+    msg = f"Позвонить по номеру телефона {database.read_data(callback.from_user.id)[0][2]}"
+    update_chats_id()
+    from handlers.adminhandlers.adminhandlers import loaded_id
+    for i in loaded_id[3]:
+        await bot.send_message(i, msg)
     await callback.message.answer(answer_in_telephone_call)
-    #create some for send telephone number to admin group
+
 
 
 async def update_phone_number(callback: types.CallbackQuery, callback_data: dict):
@@ -198,11 +233,17 @@ async def update_name_catch(message: types.Message, state: FSMContext):
         database.edit_position(message.from_user.id, "username", new_name["New_name"])
 
 
+async def callback_in_settings(callback: types.CallbackQuery, callback_data: dict):
+        print(callback_data)
+
+
+
 async def dialog_with_admins(callback: types.CallbackQuery, callback_data: dict):
     await UserDialogWithAdmins.messages.set()
     cats = categories_view(categories, callback_data["Current_path"])
     markup = create_inline_markup(cats, callback_data["Current_path"])
     await callback.message.answer(categories_messages[callback_data["Current_path"]], reply_markup=markup)
+
 
 async def messages_replier(message: types.Message, state: FSMContext):
     update_chats_id()
@@ -233,7 +274,9 @@ def register_user_handlers(dp:  Dispatcher):
     dp.register_callback_query_handler(report_callbacks, navigator_callback.filter(), state=[UserReportState.address,
                                                                                              UserReportState.reason,
                                                                                              UserReportState.photo,
-                                                                                             UserOfferState.offer])
+                                                                                             UserOfferState.offer,
+                                                                                             UserUpdateSettingsState.New_Name,
+                                                                                             UserUpdateSettingsState.New_Phone])
     dp.register_message_handler(report_address, state=UserReportState.address)
     dp.register_message_handler(report_photo_check_type, state=UserReportState.photo)
     dp.register_message_handler(report_photo, state=UserReportState.photo, content_types=["photo"])
@@ -247,3 +290,5 @@ def register_user_handlers(dp:  Dispatcher):
     dp.register_message_handler(messages_replier, state=UserDialogWithAdmins.messages)
     dp.register_callback_query_handler(stop_dialog_with_admins, navigator_callback.filter(), state=UserDialogWithAdmins.messages)
     dp.register_callback_query_handler(walk_in_dirs, navigator_callback.filter())
+    dp.register_callback_query_handler(callback_in_settings, navigator_callback.filter(),
+                                       state=[UserUpdateSettingsState.New_Name, UserUpdateSettingsState.New_Phone])

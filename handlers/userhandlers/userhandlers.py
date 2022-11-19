@@ -150,6 +150,7 @@ async def report_reason(message: types.Message, state: FSMContext):
     caption = f"⛔*Поступила новая жалоба\:* \n @{id_user if username == None else username} \n _*Имя и фамилия\:*_ {name}\n _*Номер телефона\:*_ \+{phone}\n _*Адрес: *_{report_data['address'] if 'address' in report_data.keys() else ''}\n _*Содержание: *_ {report_data['message'] if 'message' in report_data.keys() else ''}"
     update_chats_id()
     from handlers.adminhandlers.adminhandlers import loaded_id
+    print(loaded_id)
     if "photo" in report_data:
         for i in loaded_id[2]:
             await bot.send_photo(i, report_data["photo"], caption=caption)
@@ -181,6 +182,7 @@ async def new_offer_from_user_register(message: types.Message, state: FSMContext
     caption = f"⛔*Поступила новая жалоба\:* \n @{id_user if username == None else username} \n _*Имя и фамилия\:*_ {name}\n _*Номер телефона\:*_ \+{phone}\n _*Содержание: *_ {offer_data['offer'] if 'offer' in offer_data.keys() else ''}"
     update_chats_id()
     from handlers.adminhandlers.adminhandlers import loaded_id
+
     for i in loaded_id[1]:
         await bot.send_message(i, caption)
 

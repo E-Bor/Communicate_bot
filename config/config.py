@@ -1,9 +1,9 @@
 import os
 PATH = "\\".join(os.path.abspath(os.path.dirname(__file__)).split("\\")[:-1])
 
-TOKEN = "5360699267:AAERB5v0pSG9ngWeJX2BlO3gSlZmjskpmxE"
+TOKEN = ""
 
-ADMINS_ID = [429608647]
+ADMINS_ID = []
 
 
 

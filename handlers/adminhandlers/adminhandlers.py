@@ -103,7 +103,7 @@ async def ban_unban_users(message: types.Message):
 
 
 async def admin_answer(message: types.Message):
-    await message.answer("text")
+
     client_message = message.reply_to_message.text
     admin_ans = f"Ответ Администратора: {message.text}"
     user_id = client_message.split()[3]
